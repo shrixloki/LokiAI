@@ -1,7 +1,10 @@
 Loki.AI
 A combined Blockchain + AI Project
+
 Status: 🚧 In Development
+
 Demo Video: https://drive.google.com/file/d/1nLhSK99C3LHHQoPAALbXomUnGBvWeUlN/view?usp=sharing
+
 Tech Stack
 Frontend: React, Vite, TypeScript, TailwindCSS
 
