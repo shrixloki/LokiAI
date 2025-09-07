@@ -7,7 +7,7 @@ Frontend: React, Vite, TypeScript, TailwindCSS
 
 Backend: Rust (primary), Python (optional microservices)
 
-Smart Contracts: [planned]
+Smart Contracts: Substrate | Ethereum (Solidity, Hardhat) | Solana | Cosmos SDK | Hyperledger Fabric | NEAR Protocol | Avalanche | Polkadot | Flow | Tezos
 
 Database: PostgreSQL (with migration scripts)
 
@@ -16,40 +16,6 @@ Node Tools: Bun, Vite
 Package Management: npm, bun
 
 Other: .env config, VS Code workspace
-
-Folder Structer:
-
-LokiAi/
-│
-├── .vscode/
-├── dist/
-├── loki/
-│   ├── .cargo/
-│   ├── .env
-│   ├── Cargo.lock
-│   ├── Cargo.toml
-│   ├── loki1/
-│   ├── simple-bot/
-│   ├── src/
-│   └── migrations/
-├── node_modules/
-├── public/
-├── src/
-├── .env
-├── .gitignore
-├── backend_server.js
-├── backend-server.js
-├── bun.lockb
-├── package.json
-├── package-lock.json
-├── postcss.config.js
-├── tailwind.config.js
-├── tsconfig.app.json
-├── tsconfig.json
-├── tsconfig.node.json
-├── vite.config.ts
-├── README.md
-└── ...
      
 How to Run
 1. Frontend (React/Vite)
