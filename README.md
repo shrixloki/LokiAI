@@ -17,34 +17,40 @@ Package Management: npm, bun
 
 Other: .env config, VS Code workspace
 
-Folder Structure
-text
+Folder Structer:
+
 LokiAi/
 │
-├── .vscode/               # VS Code workspace config
-├── dist/                  # Frontend build output
-├── loki/                  # Rust backend core
-│   ├── src/                  # Rust source files
-│   ├── Cargo.toml            # Rust project descriptor
-│   ├── Cargo.lock            # Rust dependencies lock
-│   ├── simple-backend/       # (possible service example)
-│   └── loki1/                # Rust binary/output
-├── migrations/            # SQL migration scripts (PostgreSQL)
-├── node_modules/          # JS dependencies
-├── public/                # Static frontend assets
-├── src/                   # Frontend source files (React)
-├── .env                   # Environment variables
-├── .gitignore             # Git ignore settings
-├── backend_server.js      # JS backend script/example
-├── backend-server.js      # (duplicate, possible to clean up)
-├── bun.lockb              # Bun lock file
-├── README.md              # Project documentation
-├── SETTINGS_...           # Project config/settings files
-├── WALLET_...             # Wallet-related configs/modules
-├── package.json           # Frontend/package config
-├── tailwind.config.js     # TailwindCSS config
-├── tsconfig*.json         # TypeScript configs
-└── vite.config.ts         # Vite build config
+├── .vscode/
+├── dist/
+├── loki/
+│   ├── .cargo/
+│   ├── .env
+│   ├── Cargo.lock
+│   ├── Cargo.toml
+│   ├── loki1/
+│   ├── simple-bot/
+│   ├── src/
+│   └── migrations/
+├── node_modules/
+├── public/
+├── src/
+├── .env
+├── .gitignore
+├── backend_server.js
+├── backend-server.js
+├── bun.lockb
+├── package.json
+├── package-lock.json
+├── postcss.config.js
+├── tailwind.config.js
+├── tsconfig.app.json
+├── tsconfig.json
+├── tsconfig.node.json
+├── vite.config.ts
+├── README.md
+└── ...
+     
 How to Run
 1. Frontend (React/Vite)
 bash
