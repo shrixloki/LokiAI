@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 /**
  * LokiAI Enhanced Backend Server
- * Integrates ML API, MetaMask, and testnet blockchain operations
+ * Integrates ML API, MetaMask, and multi-chain blockchain operations
  * 
  * Features:
  * - ML API integration (FastAPI on port 8000)
  * - MetaMask wallet integration with ethers.js
- * - Testnet support (Sepolia, Mumbai)
- * - Trade execution pipeline
+ * - Multi-chain support (Ethereum Mainnet, Polygon, Arbitrum, Optimism, Sepolia, Mumbai)
+ * - Environment variable configuration for RPC URLs and contract addresses
+ * - Trade execution pipeline with network-specific contracts
  * - Comprehensive logging and monitoring
  */
 
@@ -40,31 +41,101 @@ const logger = winston.createLogger({
 const app = express();
 const PORT = 25001;
 
-// Configuration
+// Configuration with environment variables
+const MAINNET_RPC_URL = process.env.MAINNET_RPC_URL || "https://eth-mainnet.g.alchemy.com/v2/i-rutA7je782gyS7TXnH3";
+const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL || "https://sepolia.infura.io/v3/YOUR_INFURA_KEY";
+const POLYGON_RPC_URL = process.env.POLYGON_RPC_URL || "https://polygon-mainnet.infura.io/v3/YOUR_INFURA_KEY";
+const MUMBAI_RPC_URL = process.env.MUMBAI_RPC_URL || "https://polygon-mumbai.infura.io/v3/YOUR_INFURA_KEY";
+const ARBITRUM_RPC_URL = process.env.ARBITRUM_RPC_URL || "https://arbitrum-mainnet.infura.io/v3/YOUR_INFURA_KEY";
+const OPTIMISM_RPC_URL = process.env.OPTIMISM_RPC_URL || "https://optimism-mainnet.infura.io/v3/YOUR_INFURA_KEY";
+
 const CONFIG = {
-    ML_API_URL: 'http://127.0.0.1:8000',
+    ML_API_URL: process.env.ML_API_URL || 'http://127.0.0.1:8000',
     NETWORKS: {
+        // Mainnets
+        mainnet: {
+            chainId: 1,
+            name: 'Ethereum Mainnet',
+            rpcUrl: MAINNET_RPC_URL,
+            explorerUrl: 'https://etherscan.io',
+            nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }
+        },
+        polygon: {
+            chainId: 137,
+            name: 'Polygon Mainnet',
+            rpcUrl: POLYGON_RPC_URL,
+            explorerUrl: 'https://polygonscan.com',
+            nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 }
+        },
+        arbitrum: {
+            chainId: 42161,
+            name: 'Arbitrum One',
+            rpcUrl: ARBITRUM_RPC_URL,
+            explorerUrl: 'https://arbiscan.io',
+            nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }
+        },
+        optimism: {
+            chainId: 10,
+            name: 'Optimism',
+            rpcUrl: OPTIMISM_RPC_URL,
+            explorerUrl: 'https://optimistic.etherscan.io',
+            nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }
+        },
+        // Testnets
         sepolia: {
             chainId: 11155111,
             name: 'Sepolia',
-            rpcUrl: 'https://sepolia.infura.io/v3/YOUR_INFURA_KEY',
+            rpcUrl: SEPOLIA_RPC_URL,
             explorerUrl: 'https://sepolia.etherscan.io',
             nativeCurrency: { name: 'Sepolia ETH', symbol: 'SEP', decimals: 18 }
         },
         mumbai: {
             chainId: 80001,
             name: 'Mumbai',
-            rpcUrl: 'https://polygon-mumbai.infura.io/v3/YOUR_INFURA_KEY',
+            rpcUrl: MUMBAI_RPC_URL,
             explorerUrl: 'https://mumbai.polygonscan.com',
             nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 }
         }
     },
     CONTRACTS: {
-        // Mock contract addresses for testnets
-        YIELD_OPTIMIZER: '0x1234567890123456789012345678901234567890',
-        ARBITRAGE_BOT: '0x2345678901234567890123456789012345678901',
-        PORTFOLIO_REBALANCER: '0x3456789012345678901234567890123456789012',
-        RISK_MANAGER: '0x4567890123456789012345678901234567890123'
+        // Contract addresses from environment variables with fallback
+        mainnet: {
+            YIELD_OPTIMIZER: process.env.MAINNET_YIELD_OPTIMIZER || '0x0000000000000000000000000000000000000000',
+            ARBITRAGE_BOT: process.env.MAINNET_ARBITRAGE_BOT || '0x0000000000000000000000000000000000000000',
+            PORTFOLIO_REBALANCER: process.env.MAINNET_PORTFOLIO_REBALANCER || '0x0000000000000000000000000000000000000000',
+            RISK_MANAGER: process.env.MAINNET_RISK_MANAGER || '0x0000000000000000000000000000000000000000'
+        },
+        polygon: {
+            YIELD_OPTIMIZER: process.env.POLYGON_YIELD_OPTIMIZER || '0x0000000000000000000000000000000000000000',
+            ARBITRAGE_BOT: process.env.POLYGON_ARBITRAGE_BOT || '0x0000000000000000000000000000000000000000',
+            PORTFOLIO_REBALANCER: process.env.POLYGON_PORTFOLIO_REBALANCER || '0x0000000000000000000000000000000000000000',
+            RISK_MANAGER: process.env.POLYGON_RISK_MANAGER || '0x0000000000000000000000000000000000000000'
+        },
+        arbitrum: {
+            YIELD_OPTIMIZER: process.env.ARBITRUM_YIELD_OPTIMIZER || '0x0000000000000000000000000000000000000000',
+            ARBITRAGE_BOT: process.env.ARBITRUM_ARBITRAGE_BOT || '0x0000000000000000000000000000000000000000',
+            PORTFOLIO_REBALANCER: process.env.ARBITRUM_PORTFOLIO_REBALANCER || '0x0000000000000000000000000000000000000000',
+            RISK_MANAGER: process.env.ARBITRUM_RISK_MANAGER || '0x0000000000000000000000000000000000000000'
+        },
+        optimism: {
+            YIELD_OPTIMIZER: process.env.OPTIMISM_YIELD_OPTIMIZER || '0x0000000000000000000000000000000000000000',
+            ARBITRAGE_BOT: process.env.OPTIMISM_ARBITRAGE_BOT || '0x0000000000000000000000000000000000000000',
+            PORTFOLIO_REBALANCER: process.env.OPTIMISM_PORTFOLIO_REBALANCER || '0x0000000000000000000000000000000000000000',
+            RISK_MANAGER: process.env.OPTIMISM_RISK_MANAGER || '0x0000000000000000000000000000000000000000'
+        },
+        // Testnets
+        sepolia: {
+            YIELD_OPTIMIZER: process.env.SEPOLIA_YIELD_OPTIMIZER || '0x1234567890123456789012345678901234567890',
+            ARBITRAGE_BOT: process.env.SEPOLIA_ARBITRAGE_BOT || '0x2345678901234567890123456789012345678901',
+            PORTFOLIO_REBALANCER: process.env.SEPOLIA_PORTFOLIO_REBALANCER || '0x3456789012345678901234567890123456789012',
+            RISK_MANAGER: process.env.SEPOLIA_RISK_MANAGER || '0x4567890123456789012345678901234567890123'
+        },
+        mumbai: {
+            YIELD_OPTIMIZER: process.env.MUMBAI_YIELD_OPTIMIZER || '0x1234567890123456789012345678901234567890',
+            ARBITRAGE_BOT: process.env.MUMBAI_ARBITRAGE_BOT || '0x2345678901234567890123456789012345678901',
+            PORTFOLIO_REBALANCER: process.env.MUMBAI_PORTFOLIO_REBALANCER || '0x3456789012345678901234567890123456789012',
+            RISK_MANAGER: process.env.MUMBAI_RISK_MANAGER || '0x4567890123456789012345678901234567890123'
+        }
     }
 };
 
@@ -164,6 +235,9 @@ function predictionToTradeInstruction(prediction, agentConfig) {
             network: agentConfig.network || 'sepolia'
         };
         
+        // Get network-specific contract addresses
+        const networkContracts = CONFIG.CONTRACTS[tradeInstruction.network] || CONFIG.CONTRACTS.sepolia;
+        
         // Convert predictions to trade actions based on agent type
         switch (agent_type) {
             case 'yield':
@@ -172,7 +246,7 @@ function predictionToTradeInstruction(prediction, agentConfig) {
                     expectedReturn: predictions.expected_return,
                     riskScore: predictions.risk_score,
                     allocation: predictions.optimal_allocation,
-                    contractAddress: CONFIG.CONTRACTS.YIELD_OPTIMIZER
+                    contractAddress: networkContracts.YIELD_OPTIMIZER
                 };
                 break;
                 
@@ -182,7 +256,7 @@ function predictionToTradeInstruction(prediction, agentConfig) {
                     profitProbability: predictions.profit_probability,
                     expectedProfit: predictions.expected_profit,
                     executionTime: predictions.execution_time,
-                    contractAddress: CONFIG.CONTRACTS.ARBITRAGE_BOT
+                    contractAddress: networkContracts.ARBITRAGE_BOT
                 };
                 break;
                 
@@ -192,7 +266,7 @@ function predictionToTradeInstruction(prediction, agentConfig) {
                     rebalanceSignal: predictions.rebalance_signal,
                     targetAllocation: predictions.target_allocation,
                     riskAdjustment: predictions.risk_adjustment,
-                    contractAddress: CONFIG.CONTRACTS.PORTFOLIO_REBALANCER
+                    contractAddress: networkContracts.PORTFOLIO_REBALANCER
                 };
                 break;
                 
@@ -202,7 +276,7 @@ function predictionToTradeInstruction(prediction, agentConfig) {
                     riskLevel: predictions.risk_level,
                     stopLossTrigger: predictions.stop_loss_trigger,
                     positionSize: predictions.position_size,
-                    contractAddress: CONFIG.CONTRACTS.RISK_MANAGER
+                    contractAddress: networkContracts.RISK_MANAGER
                 };
                 break;
                 
@@ -600,9 +674,55 @@ app.post('/trades/:tradeId/confirm', async (req, res) => {
 app.get('/networks', (req, res) => {
     res.json({
         networks: CONFIG.NETWORKS,
-        contracts: CONFIG.CONTRACTS
+        contracts: CONFIG.CONTRACTS,
+        validation: validateNetworkConfigurations()
     });
 });
+
+// Validate network configurations
+function validateNetworkConfigurations() {
+    const validation = {
+        networks: {},
+        summary: {
+            total: 0,
+            configured: 0,
+            mainnetReady: 0,
+            testnetReady: 0
+        }
+    };
+    
+    for (const [networkName, networkConfig] of Object.entries(CONFIG.NETWORKS)) {
+        const isMainnet = ['mainnet', 'polygon', 'arbitrum', 'optimism'].includes(networkName);
+        const isTestnet = ['sepolia', 'mumbai'].includes(networkName);
+        
+        const hasValidRpc = !networkConfig.rpcUrl.includes('YOUR_INFURA_KEY') && 
+                           !networkConfig.rpcUrl.includes('YOUR_ALCHEMY_API_KEY');
+        
+        const networkContracts = CONFIG.CONTRACTS[networkName];
+        const hasValidContracts = networkContracts && 
+                                 !Object.values(networkContracts).every(addr => 
+                                     addr === '0x0000000000000000000000000000000000000000'
+                                 );
+        
+        validation.networks[networkName] = {
+            type: isMainnet ? 'mainnet' : 'testnet',
+            rpcConfigured: hasValidRpc,
+            contractsConfigured: hasValidContracts,
+            ready: hasValidRpc && hasValidContracts,
+            rpcUrl: hasValidRpc ? 'configured' : 'needs configuration',
+            chainId: networkConfig.chainId
+        };
+        
+        validation.summary.total++;
+        if (validation.networks[networkName].ready) {
+            validation.summary.configured++;
+            if (isMainnet) validation.summary.mainnetReady++;
+            if (isTestnet) validation.summary.testnetReady++;
+        }
+    }
+    
+    return validation;
+}
 
 // Error handling middleware
 app.use((error, req, res, next) => {
@@ -630,8 +750,25 @@ async function startServer() {
         app.listen(PORT, '127.0.0.1', () => {
             logger.info(`✅ Server running on http://127.0.0.1:${PORT}`);
             logger.info(`📊 ML API: ${CONFIG.ML_API_URL}`);
+            
+            // Log network configuration status
+            const validation = validateNetworkConfigurations();
             logger.info(`⛓️ Networks: ${Object.keys(CONFIG.NETWORKS).join(', ')}`);
+            logger.info(`📊 Network Status: ${validation.summary.configured}/${validation.summary.total} configured (${validation.summary.mainnetReady} mainnet, ${validation.summary.testnetReady} testnet)`);
+            
+            // Log which networks are ready
+            const readyNetworks = Object.entries(validation.networks)
+                .filter(([_, config]) => config.ready)
+                .map(([name, _]) => name);
+            
+            if (readyNetworks.length > 0) {
+                logger.info(`✅ Ready networks: ${readyNetworks.join(', ')}`);
+            } else {
+                logger.warn(`⚠️ No networks fully configured. Update .env file with RPC URLs and contract addresses.`);
+            }
+            
             logger.info(`🔧 Health check: http://127.0.0.1:${PORT}/health`);
+            logger.info(`🌐 Network info: http://127.0.0.1:${PORT}/networks`);
         });
         
     } catch (error) {
