@@ -1,0 +1,213 @@
+# LokiAI Complete System - Docker Compose Configuration
+version: '3.8'
+
+services:
+  # Frontend Service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend.dev
+    container_name: lokiai-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:25001
+      - VITE_ML_API_URL=http://localhost:8000
+      - VITE_DEPOSIT_API_URL=http://localhost:25002
+      - VITE_CAPITAL_API_URL=http://localhost:25003
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./index.html:/app/index.html
+      - ./vite.config.ts:/app/vite.config.ts
+    depends_on:
+      - backend
+      - ml-api
+    networks:
+      - lokiai-network
+    restart: unless-stopped
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+
+  # Main Backend Service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: lokiai-backend
+    ports:
+      - "25001:25001"
+    environment:
+      - NODE_ENV=development
+      - PORT=25001
+      - ML_API_URL=http://ml-api:8000
+      - DEPOSIT_SERVICE_URL=http://deposit-service:25002
+      - CAPITAL_SERVICE_URL=http://capital-service:25003
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - ml-api
+    networks:
+      - lokiai-network
+    restart: unless-stopped
+    command: ["node", "backend_server_enhanced.js"]
+
+  # Deposit Service
+  deposit-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: lokiai-deposit-service
+    ports:
+      - "25002:25002"
+    environment:
+      - NODE_ENV=development
+      - PORT=25002
+      - BACKEND_URL=http://backend:25001
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - lokiai-network
+    restart: unless-stopped
+    command: ["node", "backend_deposit_service.js"]
+
+  # Capital Allocation Service
+  capital-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: lokiai-capital-service
+    ports:
+      - "25003:25003"
+    environment:
+      - NODE_ENV=development
+      - ALLOCATION_PORT=25003
+      - SEPOLIA_RPC=${SEPOLIA_RPC:-https://sepolia.infura.io/v3/YOUR_INFURA_KEY}
+      - AGENT_WALLET=${AGENT_WALLET:-0x742d35Cc6Cd3B7a8917fe5b3B8b3C9f5d5e5d9a2}
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - lokiai-network
+    restart: unless-stopped
+    command: ["node", "capital_allocation_service.js"]
+
+  # ML API Service
+  ml-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.ml
+    container_name: lokiai-ml-api
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+      - ML_MODEL_PATH=/app/models
+      - LOG_LEVEL=info
+    volumes:
+      - ./logs:/app/logs
+      - ./models:/app/models
+    networks:
+      - lokiai-network
+    restart: unless-stopped
+
+  # System Monitor
+  monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.ml
+    container_name: lokiai-monitor
+    environment:
+      - PYTHONPATH=/app
+      - ML_API_URL=http://ml-api:8000
+      - BACKEND_URL=http://backend:25001
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - backend
+      - ml-api
+    networks:
+      - lokiai-network
+    restart: unless-stopped
+    command: ["python", "agent_monitor.py"]
+
+  # System Status Dashboard
+  status:
+    build:
+      context: .
+      dockerfile: Dockerfile.ml
+    container_name: lokiai-status
+    ports:
+      - "8080:8080"
+    environment:
+      - PYTHONPATH=/app
+      - ML_API_URL=http://ml-api:8000
+      - BACKEND_URL=http://backend:25001
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - backend
+      - ml-api
+    networks:
+      - lokiai-network
+    restart: unless-stopped
+    command: ["python", "system_status.py"]
+
+  # Redis (for production caching)
+  redis:
+    image: redis:7-alpine
+    container_name: lokiai-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - lokiai-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # MongoDB (for production database)
+  mongodb:
+    image: mongo:6
+    container_name: lokiai-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=lokiai
+      - MONGO_INITDB_ROOT_PASSWORD=lokiai_password_2024
+      - MONGO_INITDB_DATABASE=lokiai
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - lokiai-network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy (for production)
+  nginx:
+    image: nginx:alpine
+    container_name: lokiai-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/ssl/certs:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - lokiai-network
+    restart: unless-stopped
+    profiles:
+      - production
+
+networks:
+  lokiai-network:
+    driver: bridge
+    name: lokiai-network
+
+volumes:
+  mongodb_data:
+    name: lokiai-mongodb-data
+  redis_data:
+    name: lokiai-redis-data
