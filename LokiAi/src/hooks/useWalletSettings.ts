@@ -64,7 +64,7 @@ export interface SettingsExport {
   version: string;
 }
 
-const API_BASE_URL = 'http://127.0.0.1:25000';
+const API_BASE_URL = 'http://127.0.0.1:5000';
 
 export const useWalletSettings = () => {
   const { account, isConnected } = useMetaMask();
@@ -141,7 +141,7 @@ export const useWalletSettings = () => {
   const generateAuthMessage = useCallback((action: string): string => {
     const timestamp = Math.floor(Date.now() / 1000);
     const nonce = Math.random().toString(36).substring(2, 15);
-    return `Chainflow Sentinel Settings ${action}\n\nWallet: ${account}\nTimestamp: ${timestamp}\nNonce: ${nonce}`;
+    return `LokiAI - The Crosschain Platform Settings ${action}\n\nWallet: ${account}\nTimestamp: ${timestamp}\nNonce: ${nonce}`;
   }, [account]);
 
   // Fetch settings for current wallet

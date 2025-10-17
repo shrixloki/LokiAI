@@ -22,7 +22,9 @@ interface UseMetaMaskReturn extends MetaMaskState {
   getBalance: () => Promise<string | null>;
 }
 
-const BACKEND_URL = 'http://127.0.0.1:25000';
+const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+  ? 'http://localhost:5000' 
+  : `http://${window.location.hostname}:5000`;
 
 const NETWORK_NAMES: { [key: string]: string } = {
   '0x1': 'Ethereum Mainnet',

@@ -149,7 +149,7 @@ export default function Settings() {
       if (exportData) {
         const dataStr = JSON.stringify(exportData, null, 2);
         const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-        const exportFileDefaultName = `chainflow-settings-${account?.slice(0, 8)}.json`;
+        const exportFileDefaultName = `lokiai-settings-${account?.slice(0, 8)}.json`;
         
         const linkElement = document.createElement('a');
         linkElement.setAttribute('href', dataUri);

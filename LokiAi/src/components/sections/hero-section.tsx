@@ -16,16 +16,16 @@ export function HeroSection({ onConnectWallet, onExploreDashboard }: HeroSection
         <div className="text-center">
           {/* Main Headlines */}
           <h1 className="text-5xl md:text-7xl font-light text-foreground mb-6 leading-tight">
-            Cross-Chain AI Agents from
+            LokiAI
             <br />
-            <span className="font-normal">Data to Deployment</span>
+            <span className="font-normal">The Crosschain Platform</span>
           </h1>
           
           {/* Subheadline */}
           <p className="text-xl md:text-2xl text-scale-gray-300 mb-12 max-w-4xl mx-auto font-light leading-relaxed">
-            The first autonomous AI network delivers seamless cross-chain operations, 
-            intelligent asset management, and secure blockchain interoperability 
-            for DeFi protocols, institutions, and enterprise applications.
+            Seamless cross-chain operations powered by AI agents with advanced biometric security. 
+            Connect, transact, and manage assets across multiple blockchains with 
+            keystroke dynamics and voice authentication protecting every interaction.
           </p>
           
           {/* CTA Buttons */}

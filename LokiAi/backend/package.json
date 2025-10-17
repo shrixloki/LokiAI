@@ -1,0 +1,22 @@
+{
+  "name": "lokiai-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "LokiAI Backend API Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "mongodb": "^6.3.0",
+    "mongoose": "^8.0.0",
+    "socket.io": "^4.6.1",
+    "ethers": "^6.10.0",
+    "multer": "^1.4.5-lts.1",
+    "dotenv": "^16.3.1",
+    "node-fetch": "^3.3.2"
+  }
+}

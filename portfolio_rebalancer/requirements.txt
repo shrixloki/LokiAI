@@ -1,0 +1,32 @@
+# Portfolio Rebalancer Agent Dependencies
+# Core async dependencies
+asyncio
+aiohttp>=3.8.0
+
+# Database
+motor>=3.1.0
+pymongo>=4.3.0
+
+# Data handling
+pandas>=1.5.0
+numpy>=1.24.0
+
+# Logging and utilities
+python-dotenv>=1.0.0
+python-json-logger>=2.0.0
+prometheus-client>=0.20.0
+
+# Optional: For advanced portfolio analytics
+scipy>=1.10.0
+scikit-learn>=1.2.0
+
+# Optional: For blockchain interactions (if needed)
+web3>=6.0.0
+eth-account>=0.8.0
+
+# Optional: For price data APIs
+requests>=2.28.0
+
+# Task queue
+celery[redis]>=5.3.0
+redis>=5.0.0

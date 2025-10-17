@@ -82,7 +82,7 @@ export function useWallet() {
 
       toast({
         title: "Wallet connected successfully!",
-        description: `Welcome to Cross-Chain AI Agent Network!`
+        description: `Welcome to LokiAI - The Crosschain Platform!`
       });
 
       return user;

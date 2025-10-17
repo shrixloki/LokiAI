@@ -22,9 +22,13 @@ try {
 }
 
 # Install dependencies
-Write-Host "[INSTALL] Installing dependencies..." -ForegroundColor Yellow
-npm install --silent
-pip install fastapi uvicorn numpy pandas scikit-learn aiohttp requests web3 python-json-logger --quiet
+Write-Host "[INSTALL] Checking dependencies..." -ForegroundColor Yellow
+if (!(Test-Path "node_modules")) {
+    Write-Host "[INSTALL] Installing Node.js dependencies..." -ForegroundColor Yellow
+    npm install --silent
+} else {
+    Write-Host "[OK] Node.js dependencies already installed" -ForegroundColor Green
+}
 
 # Create logs directory
 if (!(Test-Path "logs")) {
@@ -33,24 +37,9 @@ if (!(Test-Path "logs")) {
 
 Write-Host "[SERVICES] Starting all services..." -ForegroundColor Green
 
-# Start ML API Service
-Write-Host "[ML] Starting ML API Service (Port 8000)..." -ForegroundColor Cyan
-Start-Process -FilePath "python" -ArgumentList "ml_api_service.py" -WindowStyle Normal -WorkingDirectory $PWD
-Start-Sleep -Seconds 3
-
-# Start Backend Server
-Write-Host "[BACKEND] Starting Backend Server (Port 25001)..." -ForegroundColor Cyan
-Start-Process -FilePath "node" -ArgumentList "backend_server_enhanced.js" -WindowStyle Normal -WorkingDirectory $PWD
-Start-Sleep -Seconds 3
-
-# Start Deposit Service
-Write-Host "[DEPOSIT] Starting Deposit Service (Port 25002)..." -ForegroundColor Cyan
-Start-Process -FilePath "node" -ArgumentList "backend_deposit_service.js" -WindowStyle Normal -WorkingDirectory $PWD
-Start-Sleep -Seconds 3
-
-# Start Capital Allocation Service
-Write-Host "[CAPITAL] Starting Capital Allocation Service (Port 25003)..." -ForegroundColor Cyan
-Start-Process -FilePath "node" -ArgumentList "capital_allocation_service.js" -WindowStyle Normal -WorkingDirectory $PWD
+# Start Backend Server with Biometric Auth
+Write-Host "[BACKEND] Starting Backend Server (Port 5000)..." -ForegroundColor Cyan
+Start-Process -FilePath "node" -ArgumentList "backend-server.js" -WindowStyle Normal -WorkingDirectory $PWD
 Start-Sleep -Seconds 3
 
 # Start Frontend
@@ -63,11 +52,10 @@ Write-Host "[SUCCESS] All services started!" -ForegroundColor Green
 Write-Host ""
 Write-Host "[URLS] Service URLs:" -ForegroundColor Yellow
 Write-Host "  - Frontend:        http://localhost:5173" -ForegroundColor White
-Write-Host "  - Backend:         http://127.0.0.1:25001" -ForegroundColor White
-Write-Host "  - ML API:          http://127.0.0.1:8000" -ForegroundColor White
-Write-Host "  - ML API Docs:     http://127.0.0.1:8000/docs" -ForegroundColor White
-Write-Host "  - Deposit Service: http://127.0.0.1:25002" -ForegroundColor White
-Write-Host "  - Capital Service: http://127.0.0.1:25003" -ForegroundColor White
+Write-Host "  - Frontend (Network): http://192.168.31.233:5173" -ForegroundColor White
+Write-Host "  - Backend:         http://localhost:5000" -ForegroundColor White
+Write-Host "  - Backend (Network): http://192.168.31.233:5000" -ForegroundColor White
+Write-Host "  - Health Check:    http://localhost:5000/health" -ForegroundColor White
 Write-Host ""
 Write-Host "[INFO] All services are running in separate windows" -ForegroundColor Cyan
 Write-Host "[INFO] Close the windows to stop services" -ForegroundColor Cyan

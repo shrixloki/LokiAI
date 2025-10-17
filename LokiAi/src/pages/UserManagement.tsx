@@ -35,7 +35,7 @@ const UserManagement: React.FC = () => {
   // Fetch users from backend
   const fetchUsers = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:25000/users");
+      const res = await fetch("http://127.0.0.1:5000/users");
       const data = await res.json();
       setUsers(data);
     } catch (err) {
@@ -56,7 +56,7 @@ const UserManagement: React.FC = () => {
         payload.walletAddress = walletAddress;
       }
 
-      const response = await fetch("http://127.0.0.1:25000/users", {
+      const response = await fetch("http://127.0.0.1:5000/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

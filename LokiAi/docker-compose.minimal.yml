@@ -1,0 +1,51 @@
+# LokiAI Agents System - Minimal Docker (Database Only)
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7
+    container_name: lokiai-agents-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: lokiai2024
+      MONGO_INITDB_DATABASE: loki_agents
+    volumes:
+      - mongodb_agents_data:/data/db
+    networks:
+      - lokiai-agents-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for Caching
+  redis:
+    image: redis:7-alpine
+    container_name: lokiai-agents-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - lokiai-agents-network
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  lokiai-agents-network:
+    driver: bridge
+    name: lokiai-agents-network
+
+volumes:
+  mongodb_agents_data:
+    name: lokiai_agents_mongodb_data
+  redis_data:
+    name: lokiai_agents_redis_data

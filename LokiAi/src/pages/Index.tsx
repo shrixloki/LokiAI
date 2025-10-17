@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Zap, Shield, Globe, Wallet } from 'lucide-react';
 import { useMetaMask } from '@/hooks/useMetaMask';
 import { WalletConnectionModal } from '@/components/auth/wallet-connection-modal';
+import { BiometricLoginVerification } from '@/components/auth/BiometricLoginVerification';
 import { StatsSection } from '@/components/sections/stats-section';
 import { SecuritySection } from '@/components/sections/security-section';
 import { CtaSection } from '@/components/sections/cta-section';
@@ -14,17 +15,23 @@ import { HeroSection } from '@/components/sections/hero-section';
 import { FeaturesSection } from '@/components/sections/features-section';
 import { useNavigate } from 'react-router-dom';
 
+const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+  ? 'http://localhost:5000' 
+  : `http://${window.location.hostname}:5000`;
+
 const Index = () => {
-  const { isConnected, account } = useMetaMask();
+  const { isConnected, account, disconnect } = useMetaMask();
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+  const [showBiometricVerification, setShowBiometricVerification] = useState(false);
+  const [biometricSetupComplete, setBiometricSetupComplete] = useState(false);
   const navigate = useNavigate();
 
-  // Redirect to dashboard if already connected
+  // Biometric verification disabled - allow direct access
   useEffect(() => {
-    if (isConnected) {
-      navigate('/dashboard');
+    if (isConnected && account) {
+      console.log('✅ Wallet connected - direct access allowed');
     }
-  }, [isConnected, navigate]);
+  }, [isConnected, account]);
 
   const handleConnectWallet = async () => {
     setIsWalletModalOpen(true);
@@ -37,6 +44,18 @@ const Index = () => {
       // Allow access to dashboard even without wallet, but show connection prompt
       navigate('/dashboard');
     }
+  };
+
+  const handleBiometricSuccess = () => {
+    console.log('✅ Biometric verification successful - granting access');
+    setShowBiometricVerification(false);
+    navigate('/dashboard');
+  };
+
+  const handleBiometricFailure = () => {
+    console.log('❌ Biometric verification failed - disconnecting wallet');
+    setShowBiometricVerification(false);
+    disconnect();
   };
 
   return (
@@ -64,6 +83,8 @@ const Index = () => {
         isOpen={isWalletModalOpen}
         onClose={() => setIsWalletModalOpen(false)}
       />
+
+      {/* Biometric verification modal removed */}
     </div>
   );
 };

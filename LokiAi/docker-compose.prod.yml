@@ -1,0 +1,131 @@
+version: '3.9'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7
+    container_name: lokiai-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: lokiai2024
+      MONGO_INITDB_DATABASE: loki_agents
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - lokiai-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Biometrics ML Microservice
+  biometrics-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.biometrics
+    container_name: lokiai-biometrics
+    restart: unless-stopped
+    ports:
+      - "25000:25000"
+    volumes:
+      - biometric_models:/app/models
+    networks:
+      - lokiai-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:25000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend API Server
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: lokiai-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+      - "5050:5050"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - SOCKET_PORT=5050
+      - MONGODB_URI=mongodb://admin:lokiai2024@mongodb:27017/loki_agents?authSource=admin
+      - BIOMETRICS_URL=http://biometrics-service:25000
+      - CORS_ORIGIN=http://localhost:80,http://localhost:5175
+      - ENCRYPTION_KEY=loki-biometric-key-2025
+      - ALCHEMY_ETH_RPC=https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}
+      - ALCHEMY_POLYGON_RPC=https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}
+      - ALCHEMY_BSC_RPC=https://bsc-dataseed.binance.org/
+      - ALCHEMY_ARBITRUM_RPC=https://arb1.arbitrum.io/rpc
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      biometrics-service:
+        condition: service_healthy
+    networks:
+      - lokiai-network
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend React Application
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend.prod
+    container_name: lokiai-frontend
+    restart: unless-stopped
+    ports:
+      - "5175:80"
+    environment:
+      - VITE_API_URL=http://localhost/api
+    depends_on:
+      - backend
+    networks:
+      - lokiai-network
+
+  # NGINX Reverse Proxy
+  nginx:
+    image: nginx:stable-alpine
+    container_name: lokiai-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - backend
+      - biometrics-service
+    networks:
+      - lokiai-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  lokiai-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  biometric_models:
+    driver: local

@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: lokiai-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: lokiai2024
+      MONGO_INITDB_DATABASE: lokiai
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - lokiai-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: lokiai-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - MONGODB_URI=mongodb://admin:lokiai2024@mongodb:27017/loki_agents?authSource=admin
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - CORS_ORIGIN=http://localhost:5173
+      - ENCRYPTION_KEY=loki-biometric-key-2025
+      - ALCHEMY_API_KEY=i-rutA7je782gyS7TXnH3
+      - ALCHEMY_SEPOLIA_URL=https://eth-sepolia.g.alchemy.com/v2/i-rutA7je782gyS7TXnH3
+      - COINGECKO_API_KEY=CG-t6QoMv9z8sRjS5ZSScZrVLvg
+      - ENABLE_SIMULATION=true
+      - UNISWAP_API=https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3
+      - SUSHISWAP_API=https://api.thegraph.com/subgraphs/name/sushiswap/exchange
+      - PANCAKESWAP_API=https://api.thegraph.com/subgraphs/name/pancakeswap/exchange-v2
+      - ALCHEMY_ETH_RPC=https://eth-mainnet.g.alchemy.com/v2/i-rutA7je782gyS7TXnH3
+      - ALCHEMY_POLYGON_RPC=https://polygon-mainnet.g.alchemy.com/v2/ah_ZYvEtNa0Uln6UyUx5N
+    depends_on:
+      - mongodb
+    networks:
+      - lokiai-network
+    volumes:
+      - ./backend:/app/backend
+      - ./routes:/app/routes
+
+  ai-agents-socket:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents-socket
+    container_name: lokiai-ai-agents
+    restart: unless-stopped
+    ports:
+      - "5050:5050"
+    environment:
+      - NODE_ENV=production
+      - SOCKET_PORT=5050
+      - MONGODB_URI=mongodb://admin:lokiai2024@mongodb:27017/loki_agents?authSource=admin
+      - ENABLE_SIMULATION=true
+      - UNISWAP_API=https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3
+      - SUSHISWAP_API=https://api.thegraph.com/subgraphs/name/sushiswap/exchange
+      - PANCAKESWAP_API=https://api.thegraph.com/subgraphs/name/pancakeswap/exchange-v2
+      - ALCHEMY_ETH_RPC=https://eth-mainnet.g.alchemy.com/v2/i-rutA7je782gyS7TXnH3
+      - ALCHEMY_POLYGON_RPC=https://polygon-mainnet.g.alchemy.com/v2/ah_ZYvEtNa0Uln6UyUx5N
+    depends_on:
+      - backend
+      - mongodb
+    networks:
+      - lokiai-network
+    volumes:
+      - ./ai-agents-socket.js:/app/ai-agents-socket.js
+      - ./backend:/app/backend
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: lokiai-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5174"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+      - VITE_SOCKET_URL=http://localhost:5050
+    depends_on:
+      - backend
+      - ai-agents-socket
+    networks:
+      - lokiai-network
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./index.html:/app/index.html
+      - ./vite.config.ts:/app/vite.config.ts
+
+networks:
+  lokiai-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
