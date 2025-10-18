@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7
+    container_name: lokiai-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=lokiai2024
+      - MONGO_INITDB_DATABASE=loki_agents
+    volumes:
+      - mongodb_data:/data/db
+      - ./LokiAi/mongodb-init.js:/docker-entrypoint-initdb.d/mongodb-init.js:ro
+    networks:
+      - lokiai-network
+    restart: unless-stopped
+
+  # Backend Service (Node.js)
+  backend:
+    build:
+      context: ./LokiAi
+      dockerfile: Dockerfile.backend
+    container_name: lokiai-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - SOCKET_PORT=5000
+      - MONGODB_URI=mongodb://admin:lokiai2024@mongodb:27017/loki_agents?authSource=admin
+      - CORS_ORIGIN=http://localhost:5000,http://localhost:5173,http://localhost:5175,http://localhost:5176
+    depends_on:
+      - mongodb
+    volumes:
+      - ./LokiAi/logs:/app/logs
+    networks:
+      - lokiai-network
+    restart: unless-stopped
+
+  # Rebalancer API (Python Flask)
+  rebalancer-api:
+    build:
+      context: ./Rebalancer
+      dockerfile: Dockerfile
+    container_name: lokiai-rebalancer
+    ports:
+      - "5001:5000"
+    environment:
+      - FLASK_ENV=production
+      - PORT=5000
+      - MONGO_URI=mongodb://admin:lokiai2024@mongodb:27017/loki_agents?authSource=admin
+      - MONGO_DB_NAME=loki_agents
+    depends_on:
+      - mongodb
+    networks:
+      - lokiai-network
+    restart: unless-stopped
+
+  # Frontend Service (Vite React)
+  frontend:
+    build:
+      context: ./LokiAi
+      dockerfile: Dockerfile.frontend
+    container_name: lokiai-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+      - VITE_REBALANCER_URL=http://localhost:5001
+      - VITE_SOCKET_URL=http://localhost:5000
+    depends_on:
+      - backend
+      - rebalancer-api
+    networks:
+      - lokiai-network
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+
+networks:
+  lokiai-network:
+    driver: bridge

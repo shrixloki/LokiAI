@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # Use local MongoDB (already running on host)
+  # Backend Service (Node.js) - Build locally
+  backend:
+    build:
+      context: ./LokiAi
+      dockerfile: Dockerfile.backend.local
+    container_name: lokiai-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - SOCKET_PORT=5000
+      - MONGODB_URI=mongodb://host.docker.internal:27017/loki_agents
+      - CORS_ORIGIN=http://localhost:5000,http://localhost:5173,http://localhost:5175,http://localhost:5176
+    volumes:
+      - ./LokiAi/logs:/app/logs
+    networks:
+      - lokiai-network
+    restart: unless-stopped
+
+  # Rebalancer API (Python Flask) - Build locally  
+  rebalancer-api:
+    build:
+      context: ./Rebalancer
+      dockerfile: Dockerfile.local
+    container_name: lokiai-rebalancer
+    ports:
+      - "5001:5000"
+    environment:
+      - FLASK_ENV=production
+      - PORT=5000
+      - MONGO_URI=mongodb://host.docker.internal:27017/loki_agents
+      - MONGO_DB_NAME=loki_agents
+    networks:
+      - lokiai-network
+    restart: unless-stopped
+
+networks:
+  lokiai-network:
+    driver: bridge

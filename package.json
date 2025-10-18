@@ -1,0 +1,22 @@
+{
+  "name": "lokiai-production-agents",
+  "version": "1.0.0",
+  "description": "LokiAI Production Agents - Complete System",
+  "type": "module",
+  "scripts": {
+    "test": "node test-complete-system.js",
+    "test-simple": "node test-simple.js",
+    "rebuild": "docker-compose -f docker-compose.simple.yml down && docker-compose -f docker-compose.simple.yml build --no-cache && docker-compose -f docker-compose.simple.yml up -d",
+    "start": "docker-compose -f docker-compose.simple.yml up -d",
+    "stop": "docker-compose -f docker-compose.simple.yml down",
+    "logs": "docker-compose -f docker-compose.simple.yml logs -f"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2",
+    "socket.io-client": "^4.7.5"
+  },
+  "devDependencies": {},
+  "keywords": ["lokiai", "ai-agents", "defi", "crypto", "trading"],
+  "author": "LokiAI Team",
+  "license": "MIT"
+}

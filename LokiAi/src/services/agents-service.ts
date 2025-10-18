@@ -4,7 +4,7 @@
  * Fetches real-time agent data from backend + MongoDB
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export interface AgentPerformance {
   apy: number;
@@ -84,7 +84,7 @@ export async function runAgent(
   try {
     console.log(`🚀 Running ${agentType} agent for wallet:`, walletAddress);
     
-    const response = await fetch(`${API_BASE_URL}/api/agents/run/${agentType}`, {
+    const response = await fetch(`${API_BASE_URL}/api/agents/execute/${agentType}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

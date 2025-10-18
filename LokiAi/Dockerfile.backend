@@ -11,6 +11,7 @@ RUN npm install
 # Copy application files
 COPY backend/ ./backend/
 COPY routes/ ./routes/
+COPY src/ ./src/
 
 # Create logs directory
 RUN mkdir -p /app/logs

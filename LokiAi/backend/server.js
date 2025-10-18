@@ -9,6 +9,7 @@ import { ethers } from 'ethers';
 
 // Import routes
 import agentsRouter from '../routes/agents.js';
+import productionAgentsRouter from '../routes/production-agents.js';
 import analyticsRouter from '../routes/analytics.js';
 import crosschainRouter from '../routes/crosschain.js';
 import activityRouter from '../routes/activity.js';
@@ -16,13 +17,18 @@ import activityRouter from '../routes/activity.js';
 const app = express();
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 5000;
-const SOCKET_PORT = process.env.SOCKET_PORT || 5050;
 
 // Socket.IO setup
 const io = new Server(httpServer, {
     cors: {
-        origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5175'],
-        credentials: true
+        origin: process.env.CORS_ORIGIN?.split(',') || [
+            'http://localhost:5173',
+            'http://localhost:5174', 
+            'http://localhost:5175',
+            'http://localhost:5176'
+        ],
+        credentials: true,
+        methods: ['GET', 'POST']
     }
 });
 
@@ -296,6 +302,7 @@ app.set('io', io);
 
 // Mount route modules
 app.use('/api/agents', agentsRouter);
+app.use('/api/production-agents', productionAgentsRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/crosschain', crosschainRouter);
 app.use('/api/activity', activityRouter);
@@ -304,9 +311,64 @@ app.use('/api/activity', activityRouter);
 io.on('connection', (socket) => {
     console.log('🔌 Client connected:', socket.id);
     
+    // Handle wallet subscription
     socket.on('subscribe', (walletAddress) => {
         socket.join(`wallet:${walletAddress}`);
         console.log(`📡 Client subscribed to wallet: ${walletAddress}`);
+    });
+    
+    // Handle join-wallet event (from frontend)
+    socket.on('join-wallet', (walletAddress) => {
+        socket.join(`wallet:${walletAddress}`);
+        console.log(`📡 Client joined wallet room: ${walletAddress}`);
+        
+        // Send welcome message
+        socket.emit('agent-update', {
+            type: 'connection',
+            message: 'Connected to AI Agents system',
+            walletAddress,
+            timestamp: new Date().toISOString()
+        });
+    });
+    
+    // Handle agent execution requests
+    socket.on('run-agent', async (data) => {
+        const { walletAddress, agentType, config } = data;
+        console.log(`🤖 Socket request to run ${agentType} for ${walletAddress}`);
+        
+        try {
+            // Emit start notification
+            socket.emit('agent-update', {
+                type: 'start',
+                agentType,
+                walletAddress,
+                message: `Starting ${agentType}...`,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Simulate agent execution (in real implementation, call actual agent)
+            setTimeout(() => {
+                socket.emit('agent-result', {
+                    success: true,
+                    agentType,
+                    walletAddress,
+                    result: {
+                        pnl: Math.random() * 1000,
+                        transactions: Math.floor(Math.random() * 5) + 1,
+                        executionTime: Math.random() * 2000 + 500
+                    },
+                    timestamp: new Date().toISOString()
+                });
+            }, 2000);
+            
+        } catch (error) {
+            socket.emit('agent-error', {
+                agentType,
+                walletAddress,
+                error: error.message,
+                timestamp: new Date().toISOString()
+            });
+        }
     });
     
     socket.on('disconnect', () => {

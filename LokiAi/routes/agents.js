@@ -1,11 +1,11 @@
 import express from 'express';
 import { 
-    runAgent, 
-    getAgentStatus, 
-    updateAgentPerformance, 
-    configureAgent, 
-    toggleAgent 
-} from '../backend/controllers/agents.controller.js';
+    getAgentStatus,
+    runAgent,
+    updateAgentPerformance,
+    configureAgent,
+    toggleAgent
+} from '../backend/controllers/simple-agents.controller.js';
 
 const router = express.Router();
 
@@ -15,39 +15,20 @@ router.use((req, res, next) => {
     next();
 });
 
-/**
- * GET /api/agents/status?wallet=0x...
- * 
- * Returns all AI agents for a specific wallet with real-time performance data
- */
+// Get agent status
 router.get('/status', getAgentStatus);
 
-/**
- * POST /api/agents/run/:agentType
- * 
- * Execute a specific AI agent (arbitrage, yield-optimizer, etc.)
- */
+// Execute agent (both /run and /execute for compatibility)
 router.post('/run/:agentType', runAgent);
+router.post('/execute/:agentType', runAgent);
 
-/**
- * POST /api/agents/update
- * 
- * Update agent performance metrics (called by agent execution logic)
- */
+// Update agent performance
 router.post('/update', updateAgentPerformance);
 
-/**
- * POST /api/agents/configure
- * 
- * Create or update agent configuration
- */
+// Configure agent
 router.post('/configure', configureAgent);
 
-/**
- * POST /api/agents/toggle
- * 
- * Start or stop an agent
- */
+// Toggle agent status
 router.post('/toggle', toggleAgent);
 
 export default router;
