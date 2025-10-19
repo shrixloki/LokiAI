@@ -3,7 +3,7 @@
  * Connects to backend API for live blockchain and MongoDB data
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? '' : 'http://localhost:5000');
 
 export interface DashboardSummary {
     portfolioValue: number;
@@ -32,6 +32,27 @@ export async function fetchDashboardSummary(walletAddress: string): Promise<Dash
     }
 
     try {
+        // First try to get blockchain data
+        const blockchainResponse = await fetch(
+            `${API_BASE_URL}/api/production-blockchain/dashboard/summary?wallet=${walletAddress}`,
+            {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+
+        if (blockchainResponse.ok) {
+            const blockchainData = await blockchainResponse.json();
+            if (blockchainData.success) {
+                console.log('✅ Fetched real blockchain dashboard data');
+                return blockchainData.data;
+            }
+        }
+
+        // Fallback to regular dashboard
+        console.log('⚠️ Falling back to regular dashboard API');
         const response = await fetch(
             `${API_BASE_URL}/api/dashboard/summary?wallet=${walletAddress}`,
             {

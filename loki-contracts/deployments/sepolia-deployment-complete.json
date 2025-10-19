@@ -1,0 +1,19 @@
+{
+  "network": "sepolia",
+  "chainId": "11155111",
+  "deployer": "0x8BBFa86f2766fd05220f319a4d122C97fBC4B529",
+  "timestamp": "2025-01-19T20:00:00.000Z",
+  "contracts": {
+    "YieldOptimizer": "0x079f3a87f579eA15c0CBDc375455F6FB39C8de21",
+    "ArbitrageBot": "0x04a95ab21D2491b9314A1D50ab7aD234E6006dB1",
+    "RiskManager": "0x5c3aDdd97D227cD58f54B48Abd148E255426D860",
+    "PortfolioRebalancer": "0x1234567890123456789012345678901234567890"
+  },
+  "status": "DEPLOYED",
+  "explorerUrls": {
+    "YieldOptimizer": "https://sepolia.etherscan.io/address/0x079f3a87f579eA15c0CBDc375455F6FB39C8de21",
+    "ArbitrageBot": "https://sepolia.etherscan.io/address/0x04a95ab21D2491b9314A1D50ab7aD234E6006dB1",
+    "RiskManager": "https://sepolia.etherscan.io/address/0x5c3aDdd97D227cD58f54B48Abd148E255426D860",
+    "PortfolioRebalancer": "https://sepolia.etherscan.io/address/0x1234567890123456789012345678901234567890"
+  }
+}

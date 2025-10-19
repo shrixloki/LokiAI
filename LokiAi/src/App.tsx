@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import AIAgents from "./pages/AIAgents";
+import BlockchainAgents from "./pages/BlockchainAgents";
 import CrossChain from "./pages/CrossChain";
 import Security from "./pages/Security";
 import Analytics from "./pages/Analytics";
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/agents" element={<AIAgents />} />
+          <Route path="/blockchain-agents" element={<BlockchainAgents />} />
           <Route path="/cross-chain" element={<CrossChain />} />
           <Route path="/security" element={<Security />} />
           <Route path="/analytics" element={<Analytics />} />

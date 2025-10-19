@@ -9,7 +9,7 @@
  */
 
 import { MongoClient } from 'mongodb';
-import { productionAgentOrchestrator } from '../services/production-agent-orchestrator.js';
+import productionAgentOrchestrator from '../services/production-agent-orchestrator.js';
 
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://lokiuser:%24hrishii%21okii25@loki-ai-cluster.b63sh3c.mongodb.net/?retryWrites=true&w=majority&appName=loki-ai-cluster';

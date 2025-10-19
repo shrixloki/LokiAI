@@ -1,0 +1,187 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: lokiai-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: lokiai2024
+      MONGO_INITDB_DATABASE: loki_agents
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./LokiAi/mongodb-init.js:/docker-entrypoint-initdb.d/mongodb-init.js:ro
+    networks:
+      - lokiai-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # LokiAI Backend with Production Blockchain Integration
+  backend:
+    build:
+      context: ./LokiAi
+      dockerfile: Dockerfile.production-blockchain
+    container_name: lokiai-backend-production
+    restart: unless-stopped
+    environment:
+      # Database
+      MONGODB_URI: mongodb://admin:lokiai2024@mongodb:27017/loki_agents?authSource=admin
+      MONGO_DB_NAME: loki_agents
+      
+      # Blockchain Configuration
+      USE_TESTNET: "true"
+      SEPOLIA_RPC_URL: "https://eth-sepolia.g.alchemy.com/v2/i-rutA7je782gyS7TXnH3"
+      SEPOLIA_PRIVATE_KEY: "538768b8b1b9dfb616a5eb9d534ba9d5612163f72bd62fa581f638df7a03737d"
+      ETHEREUM_RPC_URL: "https://eth-mainnet.g.alchemy.com/v2/i-rutA7je782gyS7TXnH3"
+      ETHEREUM_PRIVATE_KEY: "538768b8b1b9dfb616a5eb9d534ba9d5612163f72bd62fa581f638df7a03737d"
+      
+      # Smart Contract Addresses (Sepolia)
+      YIELD_OPTIMIZER_ADDRESS: "0x079f3a87f579eA15c0CBDc375455F6FB39C8de21"
+      ARBITRAGE_BOT_ADDRESS: "0x04a95ab21D2491b9314A1D50ab7aD234E6006dB1"
+      RISK_MANAGER_ADDRESS: "0x5c3aDdd97D227cD58f54B48Abd148E255426D860"
+      PORTFOLIO_REBALANCER_ADDRESS: "0x1234567890123456789012345678901234567890"
+      
+      # Agent Configuration
+      YIELD_OPTIMIZER_INTERVAL: "60000"
+      ARBITRAGE_INTERVAL: "30000"
+      RISK_MANAGER_INTERVAL: "45000"
+      PORTFOLIO_REBALANCER_INTERVAL: "120000"
+      
+      # API Keys
+      ALCHEMY_API_KEY: "i-rutA7je782gyS7TXnH3"
+      ETHERSCAN_API_KEY: "UIISB2I1T8PEEWSTQ226KYF7QU5PQUVSJS"
+      COINGECKO_API_KEY: "CG-t6QoMv9z8sRjS5ZSScZrVLvg"
+      
+      # Notifications
+      TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
+      TELEGRAM_CHAT_ID: "${TELEGRAM_CHAT_ID:-6976498337}"
+      DISCORD_WEBHOOK_URL: "${DISCORD_WEBHOOK_URL:-}"
+      EMAIL_SMTP: "smtp.gmail.com"
+      EMAIL_USER: "${EMAIL_USER:-}"
+      EMAIL_PASS: "${EMAIL_PASS:-}"
+      
+      # Security
+      ENCRYPTION_KEY: "loki-production-key-32-characters"
+      WALLET_ENCRYPTION_KEY: "demo-encryption-key-32-characters"
+      
+      # Performance
+      NODE_ENV: "production"
+      LOG_LEVEL: "INFO"
+      
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./LokiAi/logs:/app/logs
+    networks:
+      - lokiai-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # LokiAI Frontend
+  frontend:
+    build:
+      context: ./LokiAi
+      dockerfile: Dockerfile.frontend.prod
+    container_name: lokiai-frontend-production
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE_URL: "http://backend:5000"
+      VITE_SOCKET_URL: "http://backend:5000"
+      VITE_BLOCKCHAIN_EXPLORER: "https://sepolia.etherscan.io"
+      NODE_ENV: "production"
+    ports:
+      - "3000:80"
+    networks:
+      - lokiai-network
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: lokiai-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./LokiAi/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./LokiAi/ssl:/etc/nginx/ssl:ro
+    networks:
+      - lokiai-network
+    depends_on:
+      - backend
+      - frontend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for Caching (Optional)
+  redis:
+    image: redis:7-alpine
+    container_name: lokiai-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - lokiai-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Blockchain Monitor Service
+  blockchain-monitor:
+    build:
+      context: ./LokiAi
+      dockerfile: Dockerfile.blockchain-monitor
+    container_name: lokiai-blockchain-monitor
+    restart: unless-stopped
+    environment:
+      MONGODB_URI: mongodb://admin:lokiai2024@mongodb:27017/loki_agents?authSource=admin
+      SEPOLIA_RPC_URL: "https://eth-sepolia.g.alchemy.com/v2/i-rutA7je782gyS7TXnH3"
+      YIELD_OPTIMIZER_ADDRESS: "0x079f3a87f579eA15c0CBDc375455F6FB39C8de21"
+      ARBITRAGE_BOT_ADDRESS: "0x04a95ab21D2491b9314A1D50ab7aD234E6006dB1"
+      RISK_MANAGER_ADDRESS: "0x5c3aDdd97D227cD58f54B48Abd148E255426D860"
+      PORTFOLIO_REBALANCER_ADDRESS: "0x1234567890123456789012345678901234567890"
+    networks:
+      - lokiai-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  lokiai-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

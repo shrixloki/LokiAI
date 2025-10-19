@@ -6,13 +6,23 @@ import { MongoClient } from 'mongodb';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { ethers } from 'ethers';
+import dotenv from 'dotenv';
+
+// Import blockchain integration
+import blockchainIntegration from './services/blockchain/index.js';
 
 // Import routes
 import agentsRouter from '../routes/agents.js';
 import productionAgentsRouter from '../routes/production-agents.js';
+import productionBlockchainRouter from '../routes/production-blockchain.js';
+import blockchainAgentsRouter from '../routes/blockchain-agents.js';
+import dashboardRouter from '../routes/dashboard.js';
 import analyticsRouter from '../routes/analytics.js';
 import crosschainRouter from '../routes/crosschain.js';
 import activityRouter from '../routes/activity.js';
+
+// Load environment variables from parent directory
+dotenv.config({ path: '../.env' });
 
 const app = express();
 const httpServer = createServer(app);
@@ -38,6 +48,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 // CORS configuration
 app.use(cors({
     origin: process.env.CORS_ORIGIN?.split(',') || [
+        'http://localhost:3000',
         'http://localhost:5173',
         'http://localhost:5174',
         'http://localhost:5175',
@@ -88,16 +99,32 @@ function encryptData(data) {
 }
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
+    const blockchainHealth = await blockchainIntegration.getHealthStatus();
+    
     res.json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
         services: {
             backend: 'running',
             mongodb: db ? 'connected' : 'disconnected',
-            biometrics: BIOMETRICS_URL
+            biometrics: BIOMETRICS_URL,
+            blockchain: blockchainHealth
         }
     });
+});
+
+// Blockchain status endpoint
+app.get('/api/blockchain/status', async (req, res) => {
+    try {
+        const status = await blockchainIntegration.getHealthStatus();
+        res.json(status);
+    } catch (error) {
+        res.status(500).json({
+            error: 'Failed to get blockchain status',
+            message: error.message
+        });
+    }
 });
 
 // MetaMask authentication
@@ -303,6 +330,9 @@ app.set('io', io);
 // Mount route modules
 app.use('/api/agents', agentsRouter);
 app.use('/api/production-agents', productionAgentsRouter);
+app.use('/api/production-blockchain', productionBlockchainRouter);
+app.use('/api/blockchain-agents', blockchainAgentsRouter);
+app.use('/api/dashboard', dashboardRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/crosschain', crosschainRouter);
 app.use('/api/activity', activityRouter);
@@ -406,9 +436,22 @@ httpServer.listen(PORT, '0.0.0.0', async () => {
     console.log(`✅ Health check: http://localhost:${PORT}/health`);
     
     try {
-        await connectMongoDB();
+        // Initialize MongoDB (optional)
+        try {
+            await connectMongoDB();
+        } catch (error) {
+            console.warn('⚠️ MongoDB connection failed, continuing without it:', error.message);
+        }
+        
+        // Initialize blockchain integration
+        await blockchainIntegration.initialize();
+        
         console.log('✅ All services connected and ready');
+        console.log('🎯 LokiAI Blockchain Integration Active');
+        
     } catch (error) {
-        console.error('❌ Service initialization failed');
+        console.error('❌ Service initialization failed:', error);
+        // Don't exit, continue with limited functionality
+        console.log('⚠️ Continuing with limited functionality...');
     }
 });

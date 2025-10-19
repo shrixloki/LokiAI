@@ -1,39 +1,31 @@
-/**
- * Minimal Test Server
- */
-
 import express from 'express';
 import cors from 'cors';
-import agentsRouter from './routes/agents.js';
 
 const app = express();
 const PORT = 5001;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Health check
-app.get('/health', (req, res) => {
-    res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+// Test route
+app.get('/test', (req, res) => {
+    res.json({ message: 'Test server working' });
 });
 
-// Mount agents routes
-app.use('/api/agents', agentsRouter);
+// Test production blockchain routes
+try {
+    console.log('Loading production blockchain routes...');
+    const productionBlockchainRouter = await import('./routes/production-blockchain.js');
+    app.use('/api/production-blockchain', productionBlockchainRouter.default);
+    console.log('✅ Production blockchain routes loaded');
+} catch (error) {
+    console.error('❌ Failed to load production blockchain routes:', error.message);
+}
 
-// Error handler
-app.use((err, req, res, next) => {
-    console.error('Error:', err);
-    res.status(500).json({ error: 'Internal server error', message: err.message });
-});
-
-// 404 handler
-app.use((req, res) => {
-    console.log('404 - Route not found:', req.method, req.path);
-    res.status(404).json({ error: 'Route not found', path: req.path, method: req.method });
-});
-
+// Start server
 app.listen(PORT, () => {
-    console.log(`🧪 Test server running on http://localhost:${PORT}`);
-    console.log(`📍 Health: http://localhost:${PORT}/health`);
-    console.log(`📍 Agents: http://localhost:${PORT}/api/agents/status`);
+    console.log(`🚀 Test server running on http://localhost:${PORT}`);
+    console.log('📍 Test endpoint: http://localhost:5001/test');
+    console.log('📍 Production endpoint: http://localhost:5001/api/production-blockchain/system/health');
 });

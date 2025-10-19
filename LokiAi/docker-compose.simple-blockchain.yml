@@ -1,0 +1,85 @@
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: lokiai-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: lokiuser
+      MONGO_INITDB_ROOT_PASSWORD: lokipass123
+      MONGO_INITDB_DATABASE: loki_agents
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - lokiai-network
+
+  # Blockchain-Integrated Backend (using existing Node.js)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple-backend
+    container_name: lokiai-blockchain-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      # Database
+      MONGODB_URI: mongodb://lokiuser:lokipass123@mongodb:27017/loki_agents?authSource=admin
+      DB_NAME: loki_agents
+      
+      # Server Configuration
+      PORT: 5000
+      NODE_ENV: development
+      CORS_ORIGIN: http://localhost:5173,http://localhost:5174,http://localhost:3000
+      
+      # Blockchain RPC URLs (Demo configuration)
+      ETHEREUM_RPC_URL: https://eth-mainnet.alchemyapi.io/v2/demo
+      POLYGON_RPC_URL: https://polygon-mainnet.alchemyapi.io/v2/demo
+      BSC_RPC_URL: https://bsc-dataseed.binance.org
+      ARBITRUM_RPC_URL: https://arb1.arbitrum.io/rpc
+      
+      # Demo Private Keys (DO NOT USE IN PRODUCTION)
+      ETHEREUM_PRIVATE_KEY: 0x0000000000000000000000000000000000000000000000000000000000000001
+      POLYGON_PRIVATE_KEY: 0x0000000000000000000000000000000000000000000000000000000000000001
+      BSC_PRIVATE_KEY: 0x0000000000000000000000000000000000000000000000000000000000000001
+      ARBITRUM_PRIVATE_KEY: 0x0000000000000000000000000000000000000000000000000000000000000001
+      
+      # Security
+      WALLET_ENCRYPTION_KEY: demo-encryption-key-32-characters
+      ENCRYPTION_KEY: demo-biometric-key-32-characters
+      
+      # Agent Configuration
+      ARBITRAGE_INTERVAL: 30000
+      YIELD_OPTIMIZER_INTERVAL: 60000
+      RISK_MANAGER_INTERVAL: 45000
+      PORTFOLIO_REBALANCER_INTERVAL: 120000
+      
+      # Risk Management
+      MAX_POSITION_SIZE: 0.1
+      RISK_THRESHOLD: 0.05
+      REBALANCE_THRESHOLD: 0.02
+      
+      # Logging
+      LOG_LEVEL: info
+      
+      # Development/Testing
+      USE_TESTNET: false
+      USE_MOCK_DATA: false
+      
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+    depends_on:
+      - mongodb
+    networks:
+      - lokiai-network
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  lokiai-network:
+    driver: bridge

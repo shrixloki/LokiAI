@@ -101,9 +101,12 @@ export default function Dashboard() {
                 ${dashboardData.portfolioValue.toLocaleString('en-US', { maximumFractionDigits: 2 })}
               </div>
               <div className="flex items-center justify-between">
-                <p className="text-xs text-scale-gray-500">
-                  Live from Sepolia testnet
-                </p>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  <p className="text-xs text-scale-gray-500">
+                    Live from smart contracts
+                  </p>
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -128,7 +131,7 @@ export default function Dashboard() {
                 {dashboardData.activeAgents}/{dashboardData.totalAgents}
               </div>
               <p className="text-xs text-scale-gray-500">
-                From MongoDB agents collection
+                Deployed smart contracts
               </p>
             </CardContent>
           </Card>
@@ -145,7 +148,7 @@ export default function Dashboard() {
                 {dashboardData.totalPnL >= 0 ? '+' : ''}${dashboardData.totalPnL.toLocaleString('en-US', { maximumFractionDigits: 2 })}
               </div>
               <p className="text-xs text-scale-gray-500">
-                Real agent performance data
+                Blockchain transaction profits
               </p>
             </CardContent>
           </Card>
@@ -162,7 +165,7 @@ export default function Dashboard() {
                 {dashboardData.crossChainActivity}
               </div>
               <p className="text-xs text-scale-gray-500">
-                Last 30 days from MongoDB
+                Cross-chain smart contract calls
               </p>
             </CardContent>
           </Card>

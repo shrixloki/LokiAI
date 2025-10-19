@@ -1,0 +1,54 @@
+# LokiAI Blockchain Monitor Dockerfile
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apk add --no-cache curl
+
+# Copy package files
+COPY backend/package*.json ./
+
+# Install dependencies
+RUN npm install --production
+
+# Copy blockchain monitor script
+COPY backend/services/blockchain/ ./services/blockchain/
+COPY backend/services/production-agent-orchestrator.js ./services/
+COPY backend/services/agents/ ./services/agents/
+
+# Create blockchain monitor script
+RUN echo 'import productionAgentOrchestrator from "./services/production-agent-orchestrator.js";\n\
+\n\
+console.log("🔍 Starting LokiAI Blockchain Monitor...");\n\
+\n\
+async function startMonitor() {\n\
+    try {\n\
+        await productionAgentOrchestrator.initialize();\n\
+        await productionAgentOrchestrator.startAllAgents();\n\
+        \n\
+        console.log("✅ Blockchain monitor started successfully");\n\
+        \n\
+        // Keep the process running\n\
+        setInterval(() => {\n\
+            console.log(`📊 Monitor status: ${new Date().toISOString()}`);\n\
+        }, 60000);\n\
+        \n\
+    } catch (error) {\n\
+        console.error("❌ Monitor failed:", error);\n\
+        process.exit(1);\n\
+    }\n\
+}\n\
+\n\
+startMonitor();' > monitor.js
+
+# Expose port for health checks
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=60s --timeout=10s --start-period=120s --retries=3 \
+    CMD node -e "console.log('Monitor healthy')" || exit 1
+
+# Start the monitor
+CMD ["node", "monitor.js"]

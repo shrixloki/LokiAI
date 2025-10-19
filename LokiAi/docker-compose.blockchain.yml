@@ -1,0 +1,172 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: lokiai-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: lokiai2024
+      MONGO_INITDB_DATABASE: loki_agents
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongodb-init.js:/docker-entrypoint-initdb.d/init.js:ro
+    networks:
+      - lokiai-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for caching (optional but recommended for production)
+  redis:
+    image: redis:7-alpine
+    container_name: lokiai-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - lokiai-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Blockchain-Integrated Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.blockchain
+    container_name: lokiai-blockchain-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      # Database
+      MONGODB_URI: mongodb://admin:lokiai2024@mongodb:27017/loki_agents?authSource=admin
+      DB_NAME: loki_agents
+      
+      # Server Configuration
+      PORT: 5000
+      NODE_ENV: production
+      CORS_ORIGIN: http://localhost:5173,http://localhost:5174,http://localhost:3000
+      
+      # Blockchain RPC URLs (Configure with your API keys)
+      ETHEREUM_RPC_URL: ${ETHEREUM_RPC_URL:-https://eth-mainnet.alchemyapi.io/v2/demo}
+      POLYGON_RPC_URL: ${POLYGON_RPC_URL:-https://polygon-mainnet.alchemyapi.io/v2/demo}
+      BSC_RPC_URL: ${BSC_RPC_URL:-https://bsc-dataseed.binance.org}
+      ARBITRUM_RPC_URL: ${ARBITRUM_RPC_URL:-https://arb1.arbitrum.io/rpc}
+      
+      # API Keys (Set these in your .env file)
+      ALCHEMY_API_KEY: ${ALCHEMY_API_KEY:-demo}
+      QUICKNODE_API_KEY: ${QUICKNODE_API_KEY:-demo}
+      INFURA_PROJECT_ID: ${INFURA_PROJECT_ID:-demo}
+      
+      # Server Wallet Private Keys (IMPORTANT: Use secure keys in production)
+      ETHEREUM_PRIVATE_KEY: ${ETHEREUM_PRIVATE_KEY:-0x0000000000000000000000000000000000000000000000000000000000000001}
+      POLYGON_PRIVATE_KEY: ${POLYGON_PRIVATE_KEY:-0x0000000000000000000000000000000000000000000000000000000000000001}
+      BSC_PRIVATE_KEY: ${BSC_PRIVATE_KEY:-0x0000000000000000000000000000000000000000000000000000000000000001}
+      ARBITRUM_PRIVATE_KEY: ${ARBITRUM_PRIVATE_KEY:-0x0000000000000000000000000000000000000000000000000000000000000001}
+      
+      # Security
+      WALLET_ENCRYPTION_KEY: ${WALLET_ENCRYPTION_KEY:-your-super-secure-encryption-key-here}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-your-biometric-encryption-key-here}
+      
+      # Notification Services (Optional)
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+      GMAIL_USER: ${GMAIL_USER:-}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
+      
+      # Agent Configuration
+      ARBITRAGE_INTERVAL: 30000
+      YIELD_OPTIMIZER_INTERVAL: 60000
+      RISK_MANAGER_INTERVAL: 45000
+      PORTFOLIO_REBALANCER_INTERVAL: 120000
+      
+      # Risk Management
+      MAX_POSITION_SIZE: 0.1
+      RISK_THRESHOLD: 0.05
+      REBALANCE_THRESHOLD: 0.02
+      
+      # Gas Limits (in gwei)
+      MAX_GAS_PRICE_ETHEREUM: 50
+      MAX_GAS_PRICE_POLYGON: 100
+      MAX_GAS_PRICE_BSC: 10
+      MAX_GAS_PRICE_ARBITRUM: 2
+      
+      # Logging
+      LOG_LEVEL: info
+      LOG_FILE_PATH: ./logs/lokiai.log
+      
+      # Development/Testing
+      USE_TESTNET: ${USE_TESTNET:-false}
+      USE_MOCK_DATA: ${USE_MOCK_DATA:-false}
+      
+      # Redis (for caching)
+      REDIS_URL: redis://redis:6379
+      
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - lokiai-network
+
+
+  # Frontend (React)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend.prod
+    container_name: lokiai-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    environment:
+      REACT_APP_API_URL: http://localhost:5000
+      REACT_APP_SOCKET_URL: http://localhost:5000
+    depends_on:
+      - backend
+    networks:
+      - lokiai-network
+
+  # Nginx Reverse Proxy (Optional - for production)
+  nginx:
+    image: nginx:alpine
+    container_name: lokiai-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - lokiai-network
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  lokiai-network:
+    driver: bridge

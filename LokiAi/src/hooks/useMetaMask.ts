@@ -23,7 +23,7 @@ interface UseMetaMaskReturn extends MetaMaskState {
 }
 
 const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-  ? 'http://localhost:5000' 
+  ? '' // Use relative URLs for localhost to go through nginx proxy
   : `http://${window.location.hostname}:5000`;
 
 const NETWORK_NAMES: { [key: string]: string } = {

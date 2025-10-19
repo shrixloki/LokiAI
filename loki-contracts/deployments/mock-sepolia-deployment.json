@@ -1,0 +1,34 @@
+{
+  "network": "sepolia",
+  "chainId": "11155111",
+  "deployer": "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf",
+  "timestamp": "2025-10-19T06:50:00.000Z",
+  "contracts": {
+    "YieldOptimizer": "0x1234567890123456789012345678901234567890",
+    "ArbitrageBot": "0x2345678901234567890123456789012345678901",
+    "RiskManager": "0x3456789012345678901234567890123456789012",
+    "PortfolioRebalancer": "0x4567890123456789012345678901234567890123"
+  },
+  "results": [
+    {
+      "name": "YieldOptimizer",
+      "address": "0x1234567890123456789012345678901234567890",
+      "txHash": "0xmock_yield_optimizer_tx_hash"
+    },
+    {
+      "name": "ArbitrageBot", 
+      "address": "0x2345678901234567890123456789012345678901",
+      "txHash": "0xmock_arbitrage_bot_tx_hash"
+    },
+    {
+      "name": "RiskManager",
+      "address": "0x3456789012345678901234567890123456789012", 
+      "txHash": "0xmock_risk_manager_tx_hash"
+    },
+    {
+      "name": "PortfolioRebalancer",
+      "address": "0x4567890123456789012345678901234567890123",
+      "txHash": "0xmock_portfolio_rebalancer_tx_hash"
+    }
+  ]
+}

@@ -38,6 +38,12 @@ const navigationItems = [
     badge: '12'
   },
   {
+    title: 'Blockchain Agents',
+    url: '/blockchain-agents',
+    icon: Bot,
+    badge: 'NEW'
+  },
+  {
     title: 'Cross-Chain',
     url: '/cross-chain',
     icon: ArrowUpDown,
